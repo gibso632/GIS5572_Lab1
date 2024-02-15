@@ -2,10 +2,10 @@
 FROM python:3.10-slim
 
 # Set work directory to the created flask application
-WORKDIR /ArcII_flask_app
+WORKDIR /app
 
 # Copy the directory contents into /ArcII_slask_app container
-COPY . /ArcII_flask_app
+COPY . /app
 
 # Install needed packages
 RUN pip install --trusted-host pypi.python.org -r requirements.txt

@@ -1,0 +1,112 @@
+,Instruction Sets,,,
+How to…,ArcPro GUI,ArcPy,Fiona/Shapely,PostGIS
+Create a feature class,Catalog > right click database > New > Feature Class > INSERT DETAILS,"Use arcpy.management.CreateFeatureClass(out_path, out_name, {geometry_type}, {template}, {has_m}, {has_z}, {spatial_reference}, {config_keyword}, {spatial_grid_1}, {spatial_grid_2}, {spatial_grid_3}, {out_alias}, {oid_type})","import fiona
+
+schema = {'geometry':'Point','properties':[('field_name':'str')]}
+
+fs = fiona.open('C:\Users\15612\Documents\Arc II\Lab 1','w',driver='ESRI Shapefile',schema=schema,crs='EPSG:4326')
+
+fs.close()","CREATE TABLE empty(
+     name VARCHAR(100),
+     geom GEOMETRY(POINT,4326)
+);"
+Add points to a feature class,"Be sure Feature Class was created as a a Feature Class ""Point"" Type > ... ","Change ""{geometry_type}"" from C3 to ""POINT"" > Create list of points using arcpy.Point({X}, {Y}, {Z}, {M}, {ID}) where X = longitude, easting, etc., Y = latitude, northing, etc., Z = elevation, M = other value, ID = identification of point >  for point in list: arcpy.PointGeometry(point, {spatial_reference}, {has_z}, {has_m})","import fiona 
+
+point_dict = {'pt1':[1,2],'pt2':[2,1],'pt3':[2,2]}
+
+empty = {'geometry':'Point','properties':[('field_name','str')]}
+
+shp = fiona.open(r'C:\Users\15612\Documents\Arc II\Lab 1\Points.shp','w',driver='ESRI Shapefile',schema=empty,crs='EPSG:4326') 
+
+for point in point_dict:
+     schema = {'geometry':{'type':'Point',
+           'coordinates':(point_dict[point][0],point_dict[point][1])},
+     'properties':{'field_name':point},
+     }
+
+     shp.write(schema)
+
+shp.close()","CREATE TABLE point_shp(
+     name VARCHAR(100),
+     geom GEOMETRY(POINT,4326)
+);
+
+INSERT INTO point_shp (name,geom)
+VALUES
+     ('PT_1',ST_GeomFromText('POINT(1 2)',4326)),
+     ('PT_2',ST_GeomFromText('POINT(2 1)',4326)),
+     ('PT_3',ST_GeomFromText('POINT(2 2)',4326));"
+Add line to a feature class,"Be sure Feature Class was created as a a Feature Class ""Line"" Type > ... ","Change ""{geometry_type}"" from C3 to ""POLYLINE"" > Create list of points using arcpy.Point({X}, {Y}, {Z}, {M}, {ID}) where X = longitude, easting, etc., Y = latitude, northing, etc., Z = elevation, M = other value, ID = identification of point >  arcpy.Polyline(arcpy.Array(point_list))","import fiona 
+
+point_list = [[1,2],[2,1],[2,2]]
+
+empty = {'geometry':'LineString','properties':[('field_name','str')]}
+
+shp = fiona.open(r'C:\Users\15612\Documents\Arc II\Lab 1\Polyline.shp','w',driver='ESRI Shapefile',schema=empty,crs='EPSG:4326') 
+
+for point in point_dict:
+     schema = {'geometry':{'type':'LineString',
+           'coordinates':(point_list[0],point_list[1])},
+     'properties':{'field_name':point},
+     }
+
+     shp.write(schema)
+
+shp.close()","CREATE TABLE line_shp(
+     name VARCHAR(100),
+     geom GEOMETRY(LINESTRING,4326)
+);
+
+INSERT INTO line_shp (name,geom)
+VALUES
+     ('LINE_1',ST_GeomFromText('LINESTRING(1 2 2 2)',4326)),
+     ('LINE_2',ST_GeomFromText('LINESTRING(2 1 1 2)',4326)),
+     ('LINE_3',ST_GeomFromText('LINESTRING(2 2 2 1)',4326));"
+Add polygons to a feature class,"Be sure Feature Class was created as a a Feature Class ""Polygon"" Type > ... ","Change ""{geometry_type}"" from C3 to ""POLYGON"" > Create list of points using arcpy.Point({X}, {Y}, {Z}, {M}, {ID}) where X = longitude, easting, etc., Y = latitude, northing, etc., Z = elevation, M = other value, ID = identification of point >  arcpy.Polygon(arcpy.Array(point_list))","import fiona 
+
+point_list = [(1,2),(2,1),(2,2)]
+
+empty = {'geometry':'Polygon','properties':[('field_name','str')]}
+
+shp = fiona.open(r'C:\Users\15612\Documents\Arc II\Lab 1\Polygon.shp','w',driver='ESRI Shapefile',schema=empty,crs='EPSG:4326') 
+
+for point in point_dict:
+     schema = {'geometry':{'type':'Polygon',
+           'coordinates':[point_list]},
+     'properties':{'field_name':point},
+     }
+
+     shp.write(schema)
+
+shp.close()","CREATE TABLE polygon_shp(
+     name VARCHAR(100),
+     geom GEOMETRY(POLYGON,4326)
+);
+
+INSERT INTO polygon_shp (name,geom)
+VALUES
+     ('POLY_1',ST_GeomFromText('POLYGON(1 2 2 1 2 2)',4326));"
+View each row in an attribute table for a feature class,In contents > right click layer > click attribute table,"Create empty list like point_list[] > with arcpy.da.SearchCursor(fc, ['X','Y'], {where_clause}, {spatial_reference}, {explode_to_points}, {sql_clause}, {datum_transformation}) as cursor: 
+     for row in cursor: 
+          x,y = row[0].centroid.X, row[1].centroid.Y
+          point_list.append(x,y)
+point_list","import geopandas as gpd
+
+df = shp.read_file(r'C:\Users\15612\Documents\Arc II\Lab 1\Points.shp')
+df","SELECT *
+FROM line_shp;"
+View each geometry object in a feature class,In map pane > pan and zoom,"import matplotlib as plt > Use plt.subplots(ncols=len(point_shapefile)) and set equivalent to figure size and axes > Create for loop like 
+for point, (x, y) in enumerate(point_list):
+     axes[point].scatter(x,y)
+plt.show()","for f in range(len(df)):
+      df.loc[[f],'geometry'].plot()","In pgAdmin, right click on geodatabase > Click ""Query Tool"" >  write WKT prompt like:
+
+SELECT * FROM line_shp; 
+
+> Click map icon above geometry column"
+Summarize the contents of a feature class,"In attribute table, view headings","Use the arcpy.Describe() function like 
+desc = arcpy.Describe('path_to_point_shp','Points')
+print(str(row.name for row in desc.fields) + str(desc.shapeType))",df.info(),line_shp
+Export to shapefile,In contents pane > right click layer > data > export features > choose folder location > name it <name>.shp,"Use arcpy.conversion.FeatureClassToShapefile(Input_Features, Output_Folder)",df.to_file(r'C:\Users\15612\Documents\Arc II\Lab 1\Points.shp'),
+Export to geodatabase,In toolbox > To geodatabase > Feature Class to Geodatabase,"Use arcpy.conversion.FeatureClassToGeodatabase(Input_Features, Output_Geodatabase)","Can only open a geodatabase, cannot export a shapefile to a geodatabase.",
+,,,,
